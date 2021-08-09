@@ -1,0 +1,55 @@
+---
+title: "Developing Data Products"
+subtitle: "Course Project 1"
+author: "Aubin Bannwarth"
+date: "09/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+## Summary
+
+This webpage was constructed for the first project in the *Developing Data Products* course on Coursera. We describe below how we created a map using `leaflet` to display the locations of places of worship in the United States.
+
+
+## The data set
+
+I will be using [an openly available dataset](https://data.world/awram/us-places-of-worship) that contains information about around 50 000 **places of worship** in the United States. The latitude and longitude of each place of worship are provided, which will allow us to show their position on a map of the US using `leaflet`.
+
+One must create an account with [data.world](https://data.world/) to access the data set, which can then be downloaded as a *.csv* file. We can also [configure RStudio and data.world](https://data.world/integrations/r-and-r-studio) to allow us to retrieve the data using SQL queries. 
+
+The code below does this, selecting the `name`, latitude `y`, and longitude `x` columns from the `All_Places_of_Worship` table in the `worship_ds` dataset. Note also that we first load the `data.world` package, then configure it with `set_config()`. The `cfg_saved()` function retrieves the default configuration that we have saved, with our private API Token.
+```{r}
+library(data.world)
+
+set_config(cfg_saved())
+
+worship_ds <- "https://data.world/awram/us-places-of-worship"
+
+worship <- query(
+  qry_sql("SELECT name, x, y FROM All_Places_of_Worship"),
+  dataset = worship_ds
+)
+
+```
+
+## Creating the Leaflet map
+It's now just a matter of sending our `worship` data frame through the `leaflet()` pipeline, and we obtain the desired map:
+```{r}
+library(tidyverse)
+library(leaflet)
+
+worship_map <- worship %>%
+  mutate(lat = y, lng = x) %>%
+  select(-x, -y) %>%
+  leaflet() %>%
+  addTiles() %>%
+  addMarkers(clusterOptions = markerClusterOptions(),
+             popup = worship$name
+             )
+
+worship_map
+```
+
